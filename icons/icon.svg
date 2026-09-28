@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c2b36" />
+      <stop offset="100%" stop-color="#0f171e" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background with subtle rounded shape for modern app icon -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Outer subtle circular border (Japanese Mon / Wa modern style) -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#2d4253" stroke-width="3" stroke-dasharray="8 6" opacity="0.6" />
+
+  <!-- Main Calendar Plate with Shadow -->
+  <g filter="url(#shadow)">
+    <!-- Calendar Card -->
+    <rect x="120" y="110" width="272" height="292" rx="36" fill="#fdfbf7" />
+    <!-- Header band (Indigo blue) -->
+    <path d="M 120 146 A 36 36 0 0 1 156 110 L 356 110 A 36 36 0 0 1 392 146 L 392 185 L 120 185 Z" fill="#203a4b" />
+    
+    <!-- Top Calendar Ring Binders -->
+    <circle cx="180" cy="110" r="12" fill="#d97706" />
+    <circle cx="332" cy="110" r="12" fill="#d97706" />
+    <rect x="174" y="90" width="12" height="28" rx="6" fill="#f59e0b" />
+    <rect x="326" y="90" width="12" height="28" rx="6" fill="#f59e0b" />
+
+    <!-- Calendar Grid / Days -->
+    <!-- Row 1 dots/cells -->
+    <rect x="150" y="210" width="46" height="40" rx="10" fill="#e2e8f0" />
+    <rect x="210" y="210" width="46" height="40" rx="10" fill="#e2e8f0" />
+    <rect x="270" y="210" width="46" height="40" rx="10" fill="url(#goldGrad)" opacity="0.9" />
+    <rect x="330" y="210" width="46" height="40" rx="10" fill="#e2e8f0" />
+
+    <!-- Row 2 -->
+    <rect x="150" y="265" width="46" height="40" rx="10" fill="#e2e8f0" />
+    <rect x="210" y="265" width="46" height="40" rx="10" fill="url(#accentGrad)" />
+    <rect x="270" y="265" width="46" height="40" rx="10" fill="#e2e8f0" />
+    <rect x="330" y="265" width="46" height="40" rx="10" fill="#e2e8f0" />
+
+    <!-- Row 3: Highlighted Shift block -->
+    <rect x="150" y="320" width="106" height="46" rx="12" fill="#1c2b36" />
+    <!-- Clock / Shift icon inside block -->
+    <text x="165" y="348" font-family="'Noto Sans JP', 'Hiragino Sans', sans-serif" font-size="16" font-weight="bold" fill="#f8fafc">17:00</text>
+    <rect x="270" y="320" width="106" height="46" rx="12" fill="url(#goldGrad)" />
+    <text x="295" y="348" font-family="'Noto Sans JP', 'Hiragino Sans', sans-serif" font-size="16" font-weight="bold" fill="#ffffff">確定</text>
+  </g>
+
+  <!-- Circular dynamic time badge (Shift arrow) -->
+  <g transform="translate(370, 370)">
+    <circle cx="0" cy="0" r="54" fill="#0f171e" stroke="#f59e0b" stroke-width="4" filter="url(#shadow)" />
+    <circle cx="0" cy="0" r="42" fill="#1c2b36" />
+    <!-- Clock hands indicating shift time transition -->
+    <line x1="0" y1="0" x2="0" y2="-22" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+    <line x1="0" y1="0" x2="16" y2="10" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+    <circle cx="0" cy="0" r="5" fill="#f59e0b" />
+  </g>
+</svg>

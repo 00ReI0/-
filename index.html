@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Shift Master - シフト申請・確定給与管理</title>
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <meta name="theme-color" content="#1c2b36">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Shift Master">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- アプリ共通ヘッダー -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="header-icon">暦</div>
+        <div>
+          <h1>Shift Master</h1>
+        </div>
+      </div>
+      <div class="header-tag">PWA v1.0</div>
+    </header>
+
+    <!-- ============================================== -->
+    <!-- ① 希望シフト登録画面（メインカレンダー） -->
+    <!-- ※【制約事項】希望シフト画面には給与額を表示しない -->
+    <!-- ============================================== -->
+    <main id="tab-wishes" class="tab-content active">
+      <!-- 複数日選択モード切り替えバー -->
+      <div class="control-bar">
+        <label class="toggle-label" for="toggle-multi-select">
+          <div class="switch">
+            <input type="checkbox" id="toggle-multi-select">
+            <span class="slider"></span>
+          </div>
+          <span>複数日一括登録モード</span>
+        </label>
+        <!-- FoodIT 連携モーダル起動ボタン -->
+        <button type="button" id="btn-open-foodit" class="btn-today" style="background:#1c2b36; color:#fff; border:none; display:flex; align-items:center; gap:4px;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          FoodITへ登録
+        </button>
+      </div>
+
+      <!-- カレンダーコンテナ -->
+      <div id="wish-calendar-container" class="calendar-wrap"></div>
+
+      <!-- 定型テンプレートパレット（タップで確認またはモーダル入力補助） -->
+      <div class="quick-palette-card">
+        <div class="palette-title">定型シフトテンプレート（1タップ選択対応）</div>
+        <div class="template-grid">
+          <div class="tpl-card-btn" style="border-left: 3px solid #0284c7;">
+            <span class="tpl-name">早番</span>
+            <span class="tpl-time">10:00〜15:00</span>
+          </div>
+          <div class="tpl-card-btn" style="border-left: 3px solid #d97706;">
+            <span class="tpl-name">遅番</span>
+            <span class="tpl-time">17:00〜22:00</span>
+          </div>
+          <div class="tpl-card-btn" style="border-left: 3px solid #7c3aed;">
+            <span class="tpl-name">ラスト</span>
+            <span class="tpl-time">18:00〜23:30</span>
+          </div>
+          <div class="tpl-card-btn" style="border-left: 3px solid #64748b;">
+            <span class="tpl-name">休み</span>
+            <span class="tpl-time">終日休み</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 一括選択時のフローティングアクションバー -->
+    <div id="batch-action-bar" class="batch-floating-bar">
+      <div class="batch-bar-header">
+        <span id="batch-selected-count">0日選択中</span>
+        <span style="font-size: 0.72rem; color: #fde68a;">タップして一括適用:</span>
+      </div>
+      <div class="batch-bar-btns">
+        <button type="button" id="batch-apply-early" class="btn-batch-apply early">早番</button>
+        <button type="button" id="batch-apply-late" class="btn-batch-apply late">遅番</button>
+        <button type="button" id="batch-apply-last" class="btn-batch-apply last">ラスト</button>
+        <button type="button" id="batch-apply-off" class="btn-batch-apply off">休み</button>
+        <button type="button" id="batch-cancel" class="btn-batch-apply cancel">解除</button>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- ② 確定シフト & 給与計算画面 -->
+    <!-- ============================================== -->
+    <main id="tab-confirmed" class="tab-content">
+      <!-- リアルタイム給与サマリー カード -->
+      <section class="salary-hero-card">
+        <div class="salary-hero-top">
+          <span class="salary-label">今月の概算給与</span>
+          <span id="summary-month" class="salary-month-badge">2026年10月</span>
+        </div>
+        <div id="summary-total-salary" class="salary-main-amount">¥0</div>
+
+        <div class="salary-stats-grid">
+          <div class="salary-stat-box">
+            <span class="stat-name">出勤日数 / 総時間</span>
+            <span class="stat-val"><span id="summary-days">0日</span> / <span id="summary-total-hours">0分</span></span>
+          </div>
+          <div class="salary-stat-box">
+            <span class="stat-name">通常給与 (10:00〜22:00)</span>
+            <span class="stat-val" id="summary-normal-salary">¥0</span>
+            <span class="stat-sub" id="summary-normal-hours">0分 (¥1,300/h)</span>
+          </div>
+          <div class="salary-stat-box" style="grid-column: span 2; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.15);">
+            <span class="stat-name">深夜給与 (22:00〜29:00 / 25%増)</span>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span class="stat-val" id="summary-late-salary" style="color:#fde68a;">¥0</span>
+              <span class="stat-sub" id="summary-late-hours">0分 (¥1,625/h)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- アクションバー（希望シフトからコピー） -->
+      <div class="salary-actions-bar">
+        <button type="button" id="btn-copy-wishes" class="btn-primary-action">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          希望シフトからコピー
+        </button>
+      </div>
+
+      <!-- 確定カレンダーコンテナ -->
+      <div id="confirmed-calendar-container" class="calendar-wrap"></div>
+
+      <!-- 日別確定シフト・給与内訳リスト -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            日別確定内訳
+          </h2>
+          <span class="card-subtitle">タップで編集</span>
+        </div>
+        <div id="confirmed-list-container"></div>
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- ③ 設定画面 (Settings) -->
+    <!-- ============================================== -->
+    <main id="tab-settings" class="tab-content">
+      <!-- FoodIT 認証設定カード -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            FoodIT 連携認証設定
+          </h2>
+        </div>
+        
+        <form id="form-settings">
+          <div class="form-group">
+            <label class="form-label" for="setting-store-code">店舗番号 (Kgcd)</label>
+            <input type="text" id="setting-store-code" class="form-input" placeholder="例: 02006" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="setting-employee-id">社員番号</label>
+            <input type="text" id="setting-employee-id" class="form-input" placeholder="例: 5155517" required>
+          </div>
+
+          <!-- 自動生成 Param プレビュー -->
+          <div class="form-group">
+            <label class="form-label">自動生成認証キー (Param=店舗番号|社員番号)</label>
+            <div id="preview-param" class="param-preview-badge">Param=02006|5155517</div>
+          </div>
+
+          <div class="setting-section-title" style="margin-top: 20px;">時給設定</div>
+          <div class="grid-2col">
+            <div class="form-group">
+              <label class="form-label" for="setting-base-rate">通常時給 (円)</label>
+              <input type="number" id="setting-base-rate" class="form-input" value="1300">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="setting-late-rate">深夜時給 (22:00〜)</label>
+              <input type="number" id="setting-late-rate" class="form-input" value="1625">
+            </div>
+          </div>
+
+          <div class="setting-section-title" style="margin-top: 14px;">定型シフト時間設定</div>
+          <div class="form-group">
+            <label class="form-label">早番の開始・終了</label>
+            <div class="grid-2col">
+              <input type="time" id="tpl-early-start" class="form-input" value="10:00">
+              <input type="time" id="tpl-early-end" class="form-input" value="15:00">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">遅番の開始・終了</label>
+            <div class="grid-2col">
+              <input type="time" id="tpl-late-start" class="form-input" value="17:00">
+              <input type="time" id="tpl-late-end" class="form-input" value="22:00">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ラストの開始・終了</label>
+            <div class="grid-2col">
+              <input type="time" id="tpl-last-start" class="form-input" value="18:00">
+              <input type="time" id="tpl-last-end" class="form-input" value="23:30">
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit" style="margin-top: 10px;">設定を保存する</button>
+        </form>
+      </div>
+
+      <!-- FoodIT クイックアクセスリンク -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            FoodIT Webリンク
+          </h2>
+        </div>
+        <button type="button" id="link-foodit-login" class="quick-link-btn">
+          <span>1. FoodIT ログイン画面</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
+        <button type="button" id="link-foodit-menu" class="quick-link-btn">
+          <span>2. FoodIT メニュー画面 (Param付き)</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
+        <button type="button" id="link-foodit-calendar" class="quick-link-btn">
+          <span>3. FoodIT シフト申請カレンダー</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
+      </div>
+
+      <!-- データ管理（バックアップ・復元） -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+            データ管理（完全オフライン保存）
+          </h2>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--color-text-sub); margin-bottom: 12px;">
+          データはお使いの端末（ブラウザ）内に完全に保存されています。機種変更時やバックアップ用にJSONファイルとして保存・復元できます。
+        </p>
+        <div class="grid-2col">
+          <button type="button" id="btn-export-data" class="btn-secondary-action" style="justify-content:center;">
+            バックアップ出力
+          </button>
+          <label class="btn-secondary-action" style="justify-content:center; cursor:pointer;">
+            復元（読み込み）
+            <input type="file" id="input-import-file" accept=".json" style="display:none;">
+          </label>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- 下部 Material Design 3 ボトムナビゲーション -->
+    <!-- ============================================== -->
+    <nav class="bottom-nav">
+      <div class="bottom-nav-inner">
+        <button type="button" class="bottom-nav-item active" data-tab="wishes">
+          <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/></svg>
+          </div>
+          <span class="nav-label">希望シフト</span>
+        </button>
+
+        <button type="button" class="bottom-nav-item" data-tab="confirmed">
+          <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+          </div>
+          <span class="nav-label">確定＆給与</span>
+        </button>
+
+        <button type="button" class="bottom-nav-item" data-tab="settings">
+          <div class="nav-icon-wrap">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          </div>
+          <span class="nav-label">設定</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ============================================== -->
+    <!-- シフト編集 モーダル (BottomSheet) -->
+    <!-- ============================================== -->
+    <div id="shift-modal" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h2 id="shift-modal-title">シフト登録</h2>
+            <div id="shift-modal-date" class="modal-date-sub">2026年10月1日</div>
+          </div>
+          <button type="button" id="btn-close-modal" class="btn-close">✕</button>
+        </div>
+
+        <!-- テンプレート一発選択ボタン群 -->
+        <div class="modal-quick-templates">
+          <button type="button" class="modal-tpl-btn" data-tpl="early">早番</button>
+          <button type="button" class="modal-tpl-btn" data-tpl="late">遅番</button>
+          <button type="button" class="modal-tpl-btn" data-tpl="last">ラスト</button>
+          <button type="button" class="modal-tpl-btn" data-tpl="off">休み</button>
+        </div>
+
+        <form id="shift-form">
+          <div class="grid-2col">
+            <div class="form-group">
+              <label class="form-label" for="input-start-time">開始時刻</label>
+              <input type="time" id="input-start-time" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="input-end-time">終了時刻</label>
+              <input type="time" id="input-end-time" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-break-mins">休憩時間 (分)</label>
+            <input type="number" id="input-break-mins" class="form-input" min="0" step="15" value="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-shift-note">備考・メモ</label>
+            <input type="text" id="input-shift-note" class="form-input" placeholder="例: テスト期間のため22時まで">
+          </div>
+
+          <!-- 給与プレビュー（確定シフト時のみ表示） -->
+          <div id="modal-salary-preview" class="modal-salary-box" style="display:none;">
+            <div id="modal-salary-preview-text">勤務時間を入力すると自動算出されます</div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-delete-shift" class="btn-modal-delete">削除</button>
+            <button type="submit" class="btn-modal-save">保存する</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- FoodIT 連携モーダル -->
+    <!-- ============================================== -->
+    <div id="foodit-modal" class="modal-overlay">
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <h2>FoodIT モバイルシフト申請連携</h2>
+            <div class="modal-date-sub">Direct HTTP POST & URLパラメータ連携</div>
+          </div>
+          <button type="button" id="btn-close-foodit" class="btn-close">✕</button>
+        </div>
+
+        <div style="background:var(--color-surface-variant); padding:12px; border-radius:var(--radius-md); font-size:0.82rem; margin-bottom:14px; line-height:1.6;">
+          <div><strong>店舗番号 (Kgcd):</strong> <span id="foodit-store-display">-</span></div>
+          <div><strong>生成認証キー (Param):</strong> <code id="foodit-param-display" style="background:#fff; padding:1px 4px; border-radius:3px;">-</code></div>
+          <div><strong>対象月シフト件数:</strong> <span id="foodit-count-display">0 件</span></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">申請内容テキストプレビュー</label>
+          <textarea id="foodit-summary-text" class="form-input" rows="5" readonly style="font-family:monospace; font-size:0.8rem;"></textarea>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:14px;">
+          <!-- 1. Direct HTTP POST 送信 -->
+          <button type="button" id="btn-foodit-post" class="btn-submit" style="background:#0284c7;">
+            FoodITへDirect POST送信実行
+          </button>
+          <!-- 2. Web公式ページを開く -->
+          <button type="button" id="btn-foodit-open-web" class="btn-secondary-action" style="justify-content:center;">
+            FoodITシフト申請画面をWebで開く
+          </button>
+          <!-- 3. テキストコピー -->
+          <button type="button" id="btn-foodit-copy" class="btn-secondary-action" style="justify-content:center;">
+            申請テキストをコピー
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div id="toast" class="toast"></div>
+
+  </div>
+
+  <!-- JavaScript モジュール群 -->
+  <script src="js/storage.js"></script>
+  <script src="js/salary.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/foodit.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
